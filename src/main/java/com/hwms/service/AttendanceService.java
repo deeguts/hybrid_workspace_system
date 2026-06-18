@@ -1,0 +1,75 @@
+package com.hwms.service;
+
+import com.hwms.entity.Attendance;
+import com.hwms.entity.MonthlySummary;
+import com.hwms.entity.User;
+import com.hwms.enums.AttendanceStatus;
+import com.hwms.repository.AttendanceRepository;
+import com.hwms.repository.MonthlySummaryRepository;
+import com.hwms.repository.UserRepository;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.LocalDateTime;
+
+@Service
+public class AttendanceService {
+
+    private final AttendanceRepository attendanceRepository;
+    private final MonthlySummaryRepository summaryRepository;
+    private final UserRepository userRepository;
+
+    public AttendanceService(AttendanceRepository attendanceRepository, 
+                             MonthlySummaryRepository summaryRepository, UserRepository userRepository) {
+        this.attendanceRepository = attendanceRepository;
+        this.summaryRepository = summaryRepository;
+        this.userRepository = userRepository;
+    }
+
+    @Transactional
+    public Attendance markAttendance(String email, LocalDate date, AttendanceStatus status) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        // Overwrite if entry exists for this specific day, preventing duplicates
+        Attendance attendance = attendanceRepository.findByUserUserIdAndAttendanceDate(user.getUserId(), date)
+                .orElse(Attendance.builder().user(user).attendanceDate(date).build());
+        
+        attendance.setStatus(status);
+        Attendance savedAttendance = attendanceRepository.save(attendance);
+
+        // Synchronous tracking recalculation run
+        updateSummary(user, date);
+
+        return savedAttendance;
+    }
+
+    private void updateSummary(User user, LocalDate date) {
+        String monthYear = date.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+        
+        MonthlySummary summary = summaryRepository.findByUserUserIdAndMonthYear(user.getUserId(), monthYear)
+                .orElse(MonthlySummary.builder()
+                        .user(user)
+                        .monthYear(monthYear)
+                        .auditedAt(LocalDateTime.now())
+                        .build());
+
+        // Use custom query to aggregate exact calculated values
+        long completedWfo = attendanceRepository.countByUserAndStatusAndMonth(user.getUserId(), AttendanceStatus.WFO, monthYear);
+        summary.setCompletedWfo((int) completedWfo);
+
+        if (completedWfo >= summary.getRequiredWfo()) {
+            summary.setRemainingWfo(0);
+            summary.setExcessWfo((int) completedWfo - summary.getRequiredWfo());
+        } else {
+            summary.setRemainingWfo(summary.getRequiredWfo() - (int) completedWfo);
+            summary.setExcessWfo(0);
+        }
+
+        summary.setAuditedAt(LocalDateTime.now());
+        summaryRepository.save(summary);
+    }
+}
