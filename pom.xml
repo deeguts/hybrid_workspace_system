@@ -6,7 +6,8 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.5.15</version>
-        <relativePath/> </parent>
+        <relativePath/> 
+    </parent>
     <groupId>com.hwms</groupId>
     <artifactId>hwms-backend</artifactId>
     <version>0.0.1-SNAPSHOT</version>
@@ -111,7 +112,7 @@
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
-                            <version>${lombok.version}</version>
+                            <version>1.18.36</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>

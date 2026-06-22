@@ -17,7 +17,7 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
 
     List<Attendance> findByUserUserIdOrderByAttendanceDateDesc(Long userId);
 
-    /** Count WFO days for a user*/
+
     @Query("""
         SELECT COUNT(a) FROM Attendance a
         WHERE a.user.userId = :userId
@@ -29,8 +29,6 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
         @Param("status") AttendanceStatus status,
         @Param("monthYear") String monthYear
     );
-
-    /** Fetch all attendance records for a user in a given month */
     @Query("""
         SELECT a FROM Attendance a
         WHERE a.user.userId = :userId
