@@ -1,5 +1,6 @@
 package com.hwms.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.hwms.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
@@ -13,6 +14,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+// Fixes the ByteBuddyInterceptor 500 error during JSON serialization
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class User {
 
     @Id

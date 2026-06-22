@@ -33,12 +33,16 @@ public class AuthService {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already registered");
         }
+
+        Role assignedRole = request.getRole() != null ? request.getRole() : Role.EMPLOYEE;
+
         User user = User.builder()
                 .name(request.getName())
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
-                .role(Role.EMPLOYEE) // Default role assignment
+                .role(assignedRole)
                 .build();
+                
         userRepository.save(user);
         return "User registered successfully";
     }

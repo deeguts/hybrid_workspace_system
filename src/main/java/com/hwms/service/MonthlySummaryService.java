@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -63,5 +64,32 @@ public class MonthlySummaryService {
                         0,  
                         null
                 ));
+    }
+
+    @Transactional
+    public void updateGlobalWfoRequirement(String monthYear, int newTarget) {
+        List<MonthlySummary> summaries = summaryRepository.findByMonthYear(monthYear);
+        
+        for (MonthlySummary summary : summaries) {
+            summary.setRequiredWfo(newTarget);
+            summary.setRemainingWfo(Math.max(0, newTarget - summary.getCompletedWfo()));
+            summary.setExcessWfo(Math.max(0, summary.getCompletedWfo() - newTarget));
+            summary.setAuditedAt(LocalDateTime.now());
+        }
+        
+        summaryRepository.saveAll(summaries);
+    }
+    
+    @Transactional(readOnly = true)
+    public List<MonthlySummaryResponse> getDeficientEmployees(String monthYear) {
+        return summaryRepository.findDeficientSummaries(monthYear).stream()
+            .map(summary -> new MonthlySummaryResponse(
+                    summary.getMonthYear(),
+                    summary.getRequiredWfo(),
+                    summary.getCompletedWfo(),
+                    summary.getRemainingWfo(),
+                    summary.getExcessWfo(),
+                    summary.getAuditedAt()
+            )).toList();
     }
 }
