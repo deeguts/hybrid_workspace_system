@@ -3,32 +3,25 @@ package com.hwms.controller;
 import com.hwms.dto.request.AttendanceRequest;
 import com.hwms.entity.Attendance;
 import com.hwms.service.AttendanceService;
-import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/attendance")
+@RequiredArgsConstructor
 public class AttendanceController {
 
     private final AttendanceService attendanceService;
 
-    public AttendanceController(AttendanceService attendanceService) {
-        this.attendanceService = attendanceService;
-    }
-
-    @PostMapping("/mark")
+    @PostMapping
     public ResponseEntity<Attendance> markAttendance(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @Valid @RequestBody AttendanceRequest request) {
+            @RequestBody AttendanceRequest request,
+            Authentication authentication) {
         
-        Attendance logged = attendanceService.markAttendance(
-                userDetails.getUsername(), 
-                request.getDate(), 
-                request.getStatus()
-        );
-        return ResponseEntity.ok(logged);
+        String email = authentication.getName();
+        Attendance log = attendanceService.markAttendance(email, request.getDate(), request.getStatus());
+        return ResponseEntity.ok(log);
     }
 }
