@@ -72,4 +72,15 @@ public class AttendanceService {
         summary.setAuditedAt(LocalDateTime.now());
         summaryRepository.save(summary);
     }
+    @Transactional
+    public void deleteAttendance(String email, LocalDate date) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        Attendance attendance = attendanceRepository.findByUserUserIdAndAttendanceDate(user.getUserId(), date)
+                .orElseThrow(() -> new RuntimeException("Attendance record not found for this date."));
+
+        attendanceRepository.delete(attendance);
+        updateSummary(user, date);
+    }
 }
